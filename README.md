@@ -90,4 +90,3 @@ Special thanks for fixing and improving the bot's functionality, including Nexus
 
 • This project is licensed under the MIT License<br />
 • Go to [LICENSE](https://github.com/XaviaTeam/XaviaBot/blob/main/LICENSE) file
-#
