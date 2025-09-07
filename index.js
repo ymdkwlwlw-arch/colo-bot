@@ -1,142 +1,129 @@
-import { readFileSync, writeFileSync, existsSync, statSync } from "fs";
-import { spawn, execSync } from "child_process";
-import semver from "semver";
-import axios from "axios";
+import java.util.*;
 
-import {} from "dotenv/config";
-import logger from "./core/var/modules/logger.js";
-import { loadPlugins } from "./core/var/modules/installDep.js";
+public class MessengerBot {
+    // قاعدة بيانات مؤقتة للأعضاء والمشرفين
+    static Set<String> admins = new HashSet<>(Arrays.asList("AdminID")); // ضع معرف المشرف هنا
+    static Set<String> muted = new HashSet<>();
+    static Map<String, Integer> bank = new HashMap<>();
 
-import {
-    isGlitch,
-    isReplit,
-    isGitHub,
-} from "./core/var/modules/environments.get.js";
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        System.out.println("بوت الماسنجر جاهز للعمل...");
 
-console.clear();
-
-// Install newer node version on some old Repls
-function upNodeReplit() {
-    return new Promise((resolve) => {
-        execSync(
-            "npm i --save-dev node@16 && npm config set prefix=$(pwd)/node_modules/node && export PATH=$(pwd)/node_modules/node/bin:$PATH"
-        );
-        resolve();
-    });
-}
-
-(async () => {
-    if (process.version.slice(1).split(".")[0] < 16) {
-        if (isReplit) {
-            try {
-                logger.warn("Installing Node.js v16 for Repl.it...");
-                await upNodeReplit();
-                if (process.version.slice(1).split(".")[0] < 16)
-                    throw new Error("Failed to install Node.js v16.");
-            } catch (err) {
-                logger.error(err);
-                process.exit(0);
-            }
+        while (true) {
+            System.out.print("أدخل الرسالة: ");
+            String message = sc.nextLine();
+            handleMessage("UserID", message); // ضع معرف المستخدم هنا أو اجعله ديناميكي
         }
-        logger.error(
-            "Xavia requires Node 16 or higher. Please update your version of Node."
-        );
-        process.exit(0);
     }
 
-    if (isGlitch) {
-        const WATCH_FILE = {
-            restart: {
-                include: ["\\.json"],
-            },
-            throttle: 3000,
+    public static void handleMessage(String userId, String message) {
+        // حماية الشات من الكتابة إذا تم كتم العضو
+        if (muted.contains(userId)) {
+            System.out.println("عذراً، لا يمكنك الكتابة الآن.");
+            return;
+        }
+
+        // ----------------- أوامر الإدارة -----------------
+        switch (message) {
+            case "رفع": case "اضف-أمر": case "باند": case "حذف-أمر":
+            case "سكون": case "لاست":
+                System.out.println("تم تنفيذ أمر الإدارة: " + message);
+                if(message.equals("سكون")) muted.add(userId);
+                break;
+        }
+
+        // ----------------- أوامر AI -----------------
+        switch (message) {
+            case "قول2": case "جي": case "ديبسكو": case "عدل":
+            case "جبلي": case "اكازا":
+                System.out.println("تم تنفيذ أمر الذكاء الاصطناعي: " + message);
+                break;
+        }
+
+        // ----------------- أوامر الاقتصاد -----------------
+        switch (message) {
+            case "بنك":
+                bank.putIfAbsent(userId, 100);
+                System.out.println("رصيدك: " + bank.get(userId));
+                break;
+            case "يومية":
+                bank.put(userId, bank.getOrDefault(userId, 100) + 50);
+                System.out.println("تمت إضافة المكافأة اليومية. رصيدك: " + bank.get(userId));
+                break;
+            default:
+                String[] economyCommands = {
+                    "تنقيب","عمل","قمة","حيوان","جمع","رهان","سرقة","تحدي-انمي",
+                    "بيع","ادواتي","عكس","علم","سداد","شراء","شخصية-وصف"
+                };
+                if(Arrays.asList(economyCommands).contains(message)){
+                    System.out.println("تم تنفيذ أمر الاقتصاد: " + message);
+                }
+                break;
+        }
+
+        // ----------------- أوامر عام -----------------
+        String[] generalCommands = {
+            "اختار","بحث","الاوامر","كلمات","تعلم2","بروفايل","رانك","تعلم","خط","مهام",
+            "ترجم","ابتايم","الطقس","زوجني","افك","اكس-او","المطور","اختبار","ايدي","برو",
+            "بنج","بوسة","بوسة2","تفاعل","تيد","جوجو","جوجوس","حجرة","زواج","موزان","شيل",
+            "صفع","صفع2","حب","كراهية","احفظ","منو-الاغبى","منو-حيعرس-أول","نسبة-الحب","هل-تعلم"
         };
+        if(Arrays.asList(generalCommands).contains(message)){
+            System.out.println("تم تنفيذ أمر عام: " + message);
+        }
 
-        if (
-            !existsSync(process.cwd() + "/watch.json") ||
-            !statSync(process.cwd() + "/watch.json").isFile()
-        ) {
-            logger.warn("Glitch environment detected. Creating watch.json...");
-            writeFileSync(
-                process.cwd() + "/watch.json",
-                JSON.stringify(WATCH_FILE, null, 2)
-            );
-            execSync("refresh");
+        // ----------------- أوامر المجموعة -----------------
+        String[] groupCommands = {"ملاحظه","قواعد","الدعم","حذف","معلوماتي","ادمن","تذكير","مجموعتي"};
+        if(Arrays.asList(groupCommands).contains(message)){
+            System.out.println("تم تنفيذ أمر مجموعة: " + message);
+        }
+
+        // ----------------- أوامر الوسائط -----------------
+        String[] mediaCommands = {"بلو","غلاف","صور","اغنية","تيكتوك","فيديو","خلفية"};
+        if(Arrays.asList(mediaCommands).contains(message)){
+            System.out.println("تم تنفيذ أمر وسائط: " + message);
+        }
+
+        // ----------------- أوامر الأدوات -----------------
+        String[] toolsCommands = {"ازالة","تلوين","خطوط","رفع","مهمل","تحسين","استعادة","بريد"};
+        if(Arrays.asList(toolsCommands).contains(message)){
+            System.out.println("تم تنفيذ أمر أدوات: " + message);
+        }
+
+        // ----------------- أوامر الحماية -----------------
+        switch(message) {
+            case "منع-اسم":
+                System.out.println("تم تفعيل حماية تغيير الاسم.");
+                break;
+            case "منع-كنية":
+                System.out.println("تم تفعيل حماية تغيير الكنية.");
+                break;
+            case "منع-صورة":
+                System.out.println("تم تفعيل حماية تغيير الصورة الشخصية.");
+                break;
+            case "منع-إزعاج":
+                System.out.println("تم تفعيل منع الإزعاج.");
+                break;
+            case "منع-رابط":
+                System.out.println("تم تفعيل منع الروابط.");
+                break;
+            case "منع-فيديو":
+                System.out.println("تم تفعيل منع إرسال الفيديوهات.");
+                break;
+            case "منع-صورة-ممنوعة":
+                System.out.println("تم تفعيل منع إرسال الصور الممنوعة.");
+                break;
+            case "كتم-مؤقت":
+                muted.add(userId);
+                System.out.println("تم كتم العضو مؤقتًا.");
+                break;
+            case "تحذير":
+                System.out.println("تم إرسال تحذير للعضو المخالف.");
+                break;
+            case "طرد-مخرب":
+                System.out.println("تم طرد العضو المخالف.");
+                break;
         }
     }
-
-    if (isGitHub) {
-        logger.warn("Running on GitHub is not recommended.");
-    }
-})();
-
-// End
-
-// CHECK UPDATE
-async function checkUpdate() {
-    logger.custom("Checking for updates...", "UPDATE");
-    try {
-        const res = await axios.get(
-            "https://raw.githubusercontent.com/XaviaTeam/XaviaBot/main/package.json"
-        );
-
-        const { version } = res.data;
-        const currentVersion = JSON.parse(
-            readFileSync("./package.json")
-        ).version;
-        if (semver.lt(currentVersion, version)) {
-            logger.warn(`New version available: ${version}`);
-            logger.warn(`Current version: ${currentVersion}`);
-        } else {
-            logger.custom("No updates available.", "UPDATE");
-        }
-    } catch (err) {
-        logger.error("Failed to check for updates.");
-    }
-}
-
-// Child handler
-const _1_MINUTE = 60000;
-let restartCount = 0;
-
-async function main() {
-    await checkUpdate();
-    await loadPlugins();
-    const child = spawn(
-        "node",
-        [
-            "--trace-warnings",
-            "--experimental-import-meta-resolve",
-            "--expose-gc",
-            "core/_build.js",
-        ],
-        {
-            cwd: process.cwd(),
-            stdio: "inherit",
-            env: process.env,
-        }
-    );
-
-    child.on("close", async (code) => {
-        handleRestartCount();
-        if (code !== 0 && restartCount < 5) {
-            console.log();
-            logger.error(`An error occurred with exit code ${code}`);
-            logger.warn("Restarting...");
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-            main();
-        } else {
-            console.log();
-            logger.error("XaviaBot has stopped, press Ctrl + C to exit.");
-        }
-    });
-}
-
-function handleRestartCount() {
-    restartCount++;
-    setTimeout(() => {
-        restartCount--;
-    }, _1_MINUTE);
-}
-
-main();
+                                 }
